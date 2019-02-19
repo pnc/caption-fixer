@@ -1,0 +1,94 @@
+grammar WebVtt
+  rule document
+    magic h:header? line_terminator c:cue* [\r\n ]+ {
+      def cues
+        c.elements
+      end
+
+      def to_s
+        "#{magic}\n#{c.elements.map(&:to_s).join}"
+      end
+    }
+  end
+
+  rule magic
+    "WEBVTT" {
+      def to_s
+        text_value
+      end
+    }
+  end
+
+  rule header
+    whitespace text
+  end
+
+  rule cue
+    line_terminator+ cue_identifier? start:timestamp " --> " finish:timestamp settings:cue_setting* l:line* <Cue>
+  end
+
+  rule cue_identifier
+    [A-Za-z]+ line_terminator
+  end
+
+  rule cue_setting
+    whitespace cue_setting_name ":" [^ \n\r]+
+  end
+
+  rule cue_setting_name
+    [a-zA-Z]+
+  end
+
+  rule line
+    line_terminator text {
+      def inspect
+        text.text_value.inspect
+      end
+
+      def to_s
+        text.text_value
+      end
+    }
+  end
+
+  rule timestamp
+    (hour:time ":" minute:time ":" second:float <Timestamp>) /
+    (minute:time ":" second:float <Timestamp>)
+  end
+
+  rule time
+    [0-9] [0-9] {
+      def value
+        text_value.to_i
+      end
+    }
+  end
+
+  rule integer
+    [0-9]+
+  end
+
+  rule float
+    [0-9]+ ("." [0-9]+)? {
+      def value
+        text_value.to_f
+      end
+    }
+  end
+
+  rule text
+    [^\n\r]+ {
+      def inspect
+        text_value.inspect
+      end
+    }
+  end
+
+  rule whitespace
+    [ \t]
+  end
+
+  rule line_terminator
+    [\n\r] / "\r\n"
+  end
+end
